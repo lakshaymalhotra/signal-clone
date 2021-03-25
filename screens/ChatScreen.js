@@ -15,27 +15,20 @@ import { PrivateValueStore } from '@react-navigation/core'
 
 const ChatScreen = ({navigation , route}) => {
     const [input , setInput]=useState("");
+    const [info, setInfo]=useState({uploadUri:"", imageName:"",});
     const [selectedImage, setSelectedImage] = useState(null);
     const[ messages , setMessages]=useState([]);
 
 
-// const {imageName, uploadUri} = this.state;
-// firebase
-//   .storage()
-//   .ref(imageName)
-//   .putFile(uploadUri)
-//   .then((snapshot) => {
-//     //You can check the image is now uploaded in the storage bucket
-//     console.log(`${imageName} has been successfully uploaded.`);
-//   })
-//   .catch((e) => console.log('uploading image error => ', e));
+
 
 
     // yha changes krne honge
     const sendMessage=async ()=>{
 
         Keyboard.dismiss();
-        console.log(selectedImage)
+        // console.log(selectedImage)
+        console.log("after")
          await db.collection('chats')
         .doc(route.params.id)
         .collection('messages')
@@ -46,10 +39,18 @@ const ChatScreen = ({navigation , route}) => {
             displayName: auth.currentUser.displayName,
             email : auth.currentUser.email,
             photoURL : auth.currentUser.photoURL,
-            uri : selectedImage
+            // uri : selectedImage.localUri
+
         })
+        .then(() => {
         setInput('')
         setSelectedImage(null)
+        })
+        .catch((error) => {
+                console.error("Error writing document: ", error);
+            });
+            console.log(selectedImage)
+        
 
     }
     useLayoutEffect(()=>{
@@ -124,12 +125,40 @@ const ChatScreen = ({navigation , route}) => {
       return;
     }
     
-    setSelectedImage({ age :22 });
-    console.log(selectedImage)
-     await sendMessage();
+    setSelectedImage({ localUri: pickerResult.uri });
+    // var storage=firebase.storage();
+    const reference = firebase.storage().ref('../assets/pictures/logo.png');
+    // var storageRef=storage.ref();
+    
+    // var imagesRef = storageRef.child(pickerResult.uri);
+    // console.log(imagesRef);
+    
+    
+    uploadImage(pickerResult.uri)
+    .then(()=>{
+        let imageRef = firebase.storage().ref('chats/u5k3mZm6cvUD5lJNRmNf/messages/RQ1PVlZdqIG4XVMKo5ER');
+imageRef
+  .getDownloadURL()
+  .then((url) => {
+    //from url you can fetched the uploaded image easily
+    // this.setState({selectedImage: url});
+    console.log(url);
+  })
+  .catch((e) => console.log('getting downloadURL of image error => ', e));
+    }
+    )
+    .catch((error)=>console.log(error));
+    //  sendMessage();
 
   };
-
+  const uploadImage = async(uri) => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    var ref = firebase.storage().ref('chats/messages/u5k3mZm6cvUD5lJNRmNf').child("my-image");
+    return ref.put(blob).then((snapshot)=>{console.log("updated")});
+  }
+  
+ 
  
 
 
@@ -162,10 +191,10 @@ const ChatScreen = ({navigation , route}) => {
                                       uri:data.photoURL,
                                     }}/>
                                     <Text style={styles.recieverText}>{data.message}</Text>
-                                    {data.uri && <Image source={{
-                                        uri:data.uri.localUri
+                                    {/* {data.uri && <Image source={{
+                                        uri:selectedImage.localUri
                                     }}
-                                    style={{height:30 , width:20}}/>}
+                                    style={{height:30 , width:20}}/>} */}
                             </View>
                         ):(
                                 <View style={styles.sender}>
@@ -185,15 +214,12 @@ const ChatScreen = ({navigation , route}) => {
                                     uri:data.photoURL,
                                   }}/>
                                     <Text style={styles.senderText}>{data.message}</Text>
-                                    {data.uri && <Image source={{
-                                        uri:data.uri.localUri
-                                    }}
-                                    style={{height:30 , width:20}}/>}
+                                   
                                 </View>
                             )
                         
                     ))
-                    }
+                                }
                    
                 </ScrollView>
                 <View style={styles.footer}>
