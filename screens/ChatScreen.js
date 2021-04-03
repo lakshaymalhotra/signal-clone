@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 import { StyleSheet, Text, View ,TouchableWithoutFeedback  ,Image} from 'react-native'
 import { Avatar } from 'react-native-elements'
@@ -11,24 +11,95 @@ import { Keyboard } from 'react-native'
 import { db , auth} from '../firebase'
 import * as firebase from "firebase"
 import * as ImagePicker from 'expo-image-picker';
-import { PrivateValueStore } from '@react-navigation/core'
+import MessageReactions from '../components/animation';
+
 
 const ChatScreen = ({navigation , route}) => {
     const [input , setInput]=useState("");
-    const [info, setInfo]=useState({uploadUri:"", imageName:"",});
-    const [selectedImage, setSelectedImage] = useState(null);
     const[ messages , setMessages]=useState([]);
+    const [currentSelected , setCurrentSelected]=useState(null);
+    let currentImage=null;
 
-
-
-
+    const sendReaction= async (emoji='😂',  id)=>{
+        await db.collection('chats')
+        .doc(route.params.id)
+        .collection('messages')
+        .doc(id)
+        .update({
+            messageReaction: emoji
+        })
+        console.log("FIeld added");
+    }
+        const handleSelection=(id)=>{
+            setCurrentSelected(id)
+        }
+    
+        useLayoutEffect(()=>{
+            const unsubscribe=db.collection('chats')
+            .doc(route.params.id)
+            .collection('messages')
+            .orderBy('timestamp' )
+            .onSnapshot((snapshot)=>setMessages(
+                snapshot.docs.map(doc=>({
+                    id:doc.id,
+                    data : doc.data()
+                }))
+                ))
+                // .then(()=>{console.log(messages)})
+                return unsubscribe;
+                
+        },[route])
+    
+        useLayoutEffect(()=>{
+            navigation.setOptions({
+                title:"Chat",
+                headerTitleAlign:"left",
+                headerStyle:{backgroundColor:"#2C6BED"},
+                headerTitleStyle:
+                {
+                 color:"black" ,   
+                 },
+                headerTintColor:"black",
+                headerTitle:()=>(
+                    <View 
+                    style={{
+                        flexDirection:"row",
+                        alignItems:"center",
+                        color:'black'
+                    }}>
+                        <Avatar rounded source={{
+                            uri:"https://cdn.business2community.com/wp-content/uploads/2017/08/blank-profile-picture-973460_640.png"
+                        }}/>
+                        <Text style={{color:"white" , marginLeft:10 , fontWeight:"700"}}>
+                            {route.params.chatName}
+                        </Text>
+                    </View>
+                ),
+                headerRight:()=>{
+                    <View style={{
+                        flexDirection:'row',
+                        justifyContent:'space-between',
+                        width:80,
+                        marginRight:20
+                    }}>
+                    <TouchableOpacity>
+                        <FontAwesome name="video-camera" size={24} color="black"/>
+                    </TouchableOpacity>
+                    <TouchableOpacity>
+                        <Ionicons name="call" size={24} color="black"/>
+                    </TouchableOpacity>
+    
+                    </View>
+                   
+                }
+            });
+        },[])
 
     // yha changes krne honge
     const sendMessage=async ()=>{
 
         Keyboard.dismiss();
         // console.log(selectedImage)
-        console.log("after")
          await db.collection('chats')
         .doc(route.params.id)
         .collection('messages')
@@ -39,77 +110,22 @@ const ChatScreen = ({navigation , route}) => {
             displayName: auth.currentUser.displayName,
             email : auth.currentUser.email,
             photoURL : auth.currentUser.photoURL,
-            // uri : selectedImage.localUri
+            uri : currentImage,
+            
 
         })
         .then(() => {
         setInput('')
-        setSelectedImage(null)
+        currentImage=null;
         })
         .catch((error) => {
                 console.error("Error writing document: ", error);
             });
-            console.log(selectedImage)
+            
         
 
     }
-    useLayoutEffect(()=>{
-        const unsubscribe=db.collection('chats')
-        .doc(route.params.id)
-        .collection('messages')
-        .orderBy('timestamp' )
-        .onSnapshot((snapshot)=>setMessages(
-            snapshot.docs.map(doc=>({
-                id:doc.id,
-                data : doc.data()
-            }))));
-            return unsubscribe;
-    },[route])
-
-    useLayoutEffect(()=>{
-        navigation.setOptions({
-            title:"Chat",
-            headerTitleAlign:"left",
-            headerStyle:{backgroundColor:"#2C6BED"},
-            headerTitleStyle:
-            {
-             color:"black" ,   
-             },
-            headerTintColor:"black",
-            headerTitle:()=>(
-                <View 
-                style={{
-                    flexDirection:"row",
-                    alignItems:"center",
-                    color:'black'
-                }}>
-                    <Avatar rounded source={{
-                        uri:"https://cdn.business2community.com/wp-content/uploads/2017/08/blank-profile-picture-973460_640.png"
-                    }}/>
-                    <Text style={{color:"white" , marginLeft:10 , fontWeight:"700"}}>
-                        {route.params.chatName}
-                    </Text>
-                </View>
-            ),
-            headerRight:()=>{
-                <View style={{
-                    flexDirection:'row',
-                    justifyContent:'space-between',
-                    width:80,
-                    marginRight:20
-                }}>
-                <TouchableOpacity>
-                    <FontAwesome name="video-camera" size={24} color="black"/>
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <Ionicons name="call" size={24} color="black"/>
-                </TouchableOpacity>
-
-                </View>
-               
-            }
-        });
-    },[])
+   
 
    let openImagePickerAsync = async () => {
     let permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -125,43 +141,23 @@ const ChatScreen = ({navigation , route}) => {
       return;
     }
     
-    setSelectedImage({ localUri: pickerResult.uri });
-    // var storage=firebase.storage();
-    const reference = firebase.storage().ref('../assets/pictures/logo.png');
-    // var storageRef=storage.ref();
-    
-    // var imagesRef = storageRef.child(pickerResult.uri);
-    // console.log(imagesRef);
-    
-    
-    uploadImage(pickerResult.uri)
-    .then(()=>{
-        let imageRef = firebase.storage().ref('chats/u5k3mZm6cvUD5lJNRmNf/messages/RQ1PVlZdqIG4XVMKo5ER');
-imageRef
-  .getDownloadURL()
-  .then((url) => {
-    //from url you can fetched the uploaded image easily
-    // this.setState({selectedImage: url});
-    console.log(url);
-  })
-  .catch((e) => console.log('getting downloadURL of image error => ', e));
-    }
-    )
-    .catch((error)=>console.log(error));
-    //  sendMessage();
+    console.log("image picker  "+pickerResult.uri)
+    const result=await uploadImage(pickerResult.uri)
+    let imageRef = firebase.storage().ref('chats/signal-clone10');
+    let downloadedURL= await imageRef.getDownloadURL();
+    currentImage={imageUri:downloadedURL};
 
+    sendMessage();
   };
   const uploadImage = async(uri) => {
     const response = await fetch(uri);
     const blob = await response.blob();
-    var ref = firebase.storage().ref('chats/messages/u5k3mZm6cvUD5lJNRmNf').child("my-image");
+
+    var ref = firebase.storage().ref('chats/').child('signal-clone10');
     return ref.put(blob).then((snapshot)=>{console.log("updated")});
   }
   
- 
- 
-
-
+  
     return (
         <SafeAreaView style={{
             flex:1,
@@ -173,6 +169,8 @@ imageRef
                 {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}/> */}
                 <ScrollView>
                     {messages.map(({id , data})=>(
+                        // console.log('********'),
+                        // console.log(data.uri),
                         data.email === auth.currentUser.email?(
                             <View key={id} style={styles.reciever}>
                                     <Avatar  
@@ -190,14 +188,31 @@ imageRef
                                       source={{
                                       uri:data.photoURL,
                                     }}/>
+                                    {data.messageReaction && data.messageReaction!=="" &&
+                                    <Text style={styles.messageReact}>
+                                        {data.messageReaction}
+                                    </Text>
+                                    }
+                                    <TouchableOpacity 
+                                    onLongPress={()=>handleSelection(id)}
+                                    onPress={()=>handleSelection(null)}
+                                    >
                                     <Text style={styles.recieverText}>{data.message}</Text>
-                                    {/* {data.uri && <Image source={{
-                                        uri:selectedImage.localUri
+                                    {data.uri && <Image source={{
+                                        uri:data.uri.imageUri
                                     }}
-                                    style={{height:30 , width:20}}/>} */}
+                                     style={{height:100 , width:100  , backgroundColor:'grey'}}/>} 
+                                    {currentSelected===id && 
+                                    <MessageReactions 
+                                    sendReaction={sendReaction}
+                                    id={id}
+                                    />}
+                                    </TouchableOpacity>
+                                    {}
+                                    
                             </View>
                         ):(
-                                <View style={styles.sender}>
+                                <View key={id}style={styles.sender}>
                                     <Avatar
                                     position="absolute"
                                     // WEB
@@ -253,6 +268,10 @@ imageRef
 export default ChatScreen
 
 const styles = StyleSheet.create({
+    messageReact:{
+        bottom: -10,
+        position:"absolute",
+    },
     container:{
         flex:1,
         // flexDirection:'column-reverse',

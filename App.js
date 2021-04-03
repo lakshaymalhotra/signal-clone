@@ -12,6 +12,7 @@ import ChatScreen from './screens/ChatScreen'
 import { Button } from 'react-native-elements/dist/buttons/Button';
 import { TextInput } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import MessageReactions from './components/animation'
 
 
 const Stack= createStackNavigator();
@@ -33,8 +34,10 @@ export default function App() {
     <Stack.Screen name='Register' component={RegisterScreen}/>
     <Stack.Screen name='AddChat' component={AddChat} />
     <Stack.Screen name='Chat' component={ChatScreen} />
+
     </Stack.Navigator>
     </NavigationContainer>
+    // <MessageReactions/>
    
    
     
