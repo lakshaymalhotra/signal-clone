@@ -3,29 +3,32 @@ import { StyleSheet, Text, View , KeyboardAvoidingView , Image } from 'react-nat
 import { Button , Input } from 'react-native-elements';
 import {StatusBar} from "expo-status-bar";
 import  { auth } from '../firebase';
-
-
-
+import * as firebase from "firebase"
 
 
 const LoginScreen = ({navigation}) => {
     const [email , setEmail]=useState("");
     const [password , setPassword]=useState("");
+    const [fromRegistered ,SetFromRegistered]=useState(false);
+    
     const signIn=()=>{
-        auth.signInWithEmailAndPassword(email, password)
+         auth.signInWithEmailAndPassword(email, password).then(()=>{
+             SetFromRegistered(false)
+         })
         .catch(error=>alert(error));
-    }
-    const register=()=>{}
+        }
 
     useEffect(() => {
+    
       const unsubscribe = auth.onAuthStateChanged(user=>{
-           if(user!=null){
+           if(user!==null && !fromRegistered){
                console.log("we are authenticated ")
                navigation.replace('Home');
            }
        });
        return unsubscribe;
     }, [])
+
     return (
         <KeyboardAvoidingView behavior='padding' style={styles.container}>
             <StatusBar style="light" />
@@ -56,7 +59,11 @@ const LoginScreen = ({navigation}) => {
                 />
                 <Button 
                 title="Register" 
-                onPress={()=>navigation.navigate('Register') }
+                onPress={()=>navigation.navigate('Register', {
+                    info:{
+                        SetFromRegistered
+                    }
+                }) }
                 containerStyle={styles.button}
                 type='outline'
                 />

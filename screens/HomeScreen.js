@@ -1,16 +1,19 @@
 import React , {useEffect, useLayoutEffect, useState} from 'react'
 import { SafeAreaView } from 'react-native'
 import { TouchableOpacity } from 'react-native'
-import { StyleSheet, Text, View  ,ScrollView , Button} from 'react-native'
+import { StyleSheet, Text, View  ,ScrollView , Button, TouchableHighlight} from 'react-native'
 import {Avatar} from 'react-native-elements'
 import {AntDesign ,SimpleLineIcons} from "@expo/vector-icons"
 import CustomListItem from '../components/CustomListItem'
 import {auth ,db} from '../firebase'
 import { StatusBar } from 'expo-status-bar'
+import Swipeable from 'react-native-swipeable';
 
 
 const HomeScreen = ({navigation}) => {
   const [chats ,setChats] =useState([]);
+  const [users,setUsers] = useState([]);
+  
 
   useEffect(()=>{
     const unsubscribe=db.collection("chats").onSnapshot(snapshot=>
@@ -21,6 +24,16 @@ const HomeScreen = ({navigation}) => {
       }))
     ));
     return unsubscribe;
+  },[])
+  useEffect(()=>{
+    const unsubscribe=db.collection("users").onSnapshot(snapshot=>
+      setUsers(
+        snapshot.docs.map((doc)=>({
+          data:doc.data(),
+          id:doc.id,
+        }))
+      ));
+      return unsubscribe;
   },[])
 
   const signOutuser=()=>{
@@ -55,7 +68,7 @@ const HomeScreen = ({navigation}) => {
                 rounded
                 source={{
                 uri: auth?.currentUser?.photoURL ||
-                 'https://unsplash.com/photos/2LowviVHZ-E',
+                 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=2978&q=80',
                         }}
                 />
                  </TouchableOpacity>
@@ -80,13 +93,20 @@ const HomeScreen = ({navigation}) => {
             </View>
        ),
        })
-    }, [navigation])
-  const enterChat=(id , chatName)=>{
+    }, [navigation, auth.currentUser.photoURL])
+  
+    const enterChat=(id , chatName)=>{
     navigation.navigate('Chat' ,{
       id:id ,
       chatName: chatName,
     })
   }
+  const leftContent = <Text>Pull to activate</Text>;
+
+const rightButtons = [
+  <TouchableHighlight><Text>Button 1</Text></TouchableHighlight>,
+  <TouchableHighlight><Text>Button 2</Text></TouchableHighlight>
+];
 
     return (
         <SafeAreaView>
@@ -99,8 +119,10 @@ const HomeScreen = ({navigation}) => {
               <CustomListItem id={id} key={id} chatName={chatName} enterChat={enterChat}/>
              
             ))}
-           {/* <CustomListItem enterChat={enterChat} /> */}
-           
+             {/* <Swipeable leftContent={leftContent} rightButtons={rightButtons}>
+      <Text>My swipeable content</Text>
+    </Swipeable> */}
+           <CustomListItem enterChat={enterChat} />
           
           </ScrollView>
         </SafeAreaView>

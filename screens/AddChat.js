@@ -7,7 +7,7 @@ import { db } from '../firebase';
 const AddChat = ({navigation}) => {
 
     const createChat=async ()=>{
-       
+    
         await db
         .collection('chats')
         .add({
@@ -18,6 +18,7 @@ const AddChat = ({navigation}) => {
         })
         .catch((error)=>alert(error)); 
     }
+    
     
     const [inputchat , setInputchat]=useState('');
 

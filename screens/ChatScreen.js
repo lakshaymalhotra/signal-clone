@@ -35,6 +35,7 @@ const ChatScreen = ({navigation , route}) => {
         }
     
         useLayoutEffect(()=>{
+            console.log("use effect")
             const unsubscribe=db.collection('chats')
             .doc(route.params.id)
             .collection('messages')
@@ -48,7 +49,7 @@ const ChatScreen = ({navigation , route}) => {
                 // .then(()=>{console.log(messages)})
                 return unsubscribe;
                 
-        },[route])
+        },[])
     
         useLayoutEffect(()=>{
             navigation.setOptions({
@@ -120,10 +121,7 @@ const ChatScreen = ({navigation , route}) => {
         })
         .catch((error) => {
                 console.error("Error writing document: ", error);
-            });
-            
-        
-
+            })
     }
    
 
@@ -168,6 +166,7 @@ const ChatScreen = ({navigation , route}) => {
                 <>
                 {/* <TouchableWithoutFeedback onPress={Keyboard.dismiss}/> */}
                 <ScrollView>
+                    {/* {console.log("run")} */}
                     {messages.map(({id , data})=>(
                         // console.log('********'),
                         // console.log(data.uri),
@@ -208,7 +207,7 @@ const ChatScreen = ({navigation , route}) => {
                                     id={id}
                                     />}
                                     </TouchableOpacity>
-                                    {}
+                                    {console.log('run')}
                                     
                             </View>
                         ):(
@@ -232,9 +231,9 @@ const ChatScreen = ({navigation , route}) => {
                                    
                                 </View>
                             )
-                        
-                    ))
-                                }
+                          ))
+
+                        }
                    
                 </ScrollView>
                 <View style={styles.footer}>
